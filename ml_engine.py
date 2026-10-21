@@ -156,7 +156,9 @@ def predict_kitchen_demand(
     academic_status: Optional[str] = None,
     college_event: Optional[str] = None,
     holiday_name: Optional[str] = None,
-    historical_features: Optional[Dict[str, Any]] = None
+    historical_features: Optional[Dict[str, Any]] = None,
+    manual_lag_7: Optional[float] = None,
+    manual_rolling_7d: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Predict overall meal counts and itemized requirements using the authoritative
@@ -207,11 +209,20 @@ def predict_kitchen_demand(
     col_event = college_event if college_event else ("Tech_Fest" if is_college_event else None)
     hol_name = holiday_name if holiday_name else ("Diwali_Break" if holiday_bool else None)
 
-    # Historical feature lookup mapping provided by database layer
+    # Historical feature lookup mapping provided by database layer or manual expert override
     hist_items = (historical_features or {}).get("items", {})
-    general_lag_7 = (historical_features or {}).get("overall_lag_7")
-    general_rolling_7d = (historical_features or {}).get("overall_rolling_7d")
-    history_source = (historical_features or {}).get("history_source", "none")
+    if manual_lag_7 is not None and manual_lag_7 > 0:
+        general_lag_7 = float(manual_lag_7)
+        history_source = "manual_expert_override"
+    else:
+        general_lag_7 = (historical_features or {}).get("overall_lag_7")
+        history_source = (historical_features or {}).get("history_source", "none")
+
+    if manual_rolling_7d is not None and manual_rolling_7d > 0:
+        general_rolling_7d = float(manual_rolling_7d)
+        history_source = "manual_expert_override"
+    else:
+        general_rolling_7d = (historical_features or {}).get("overall_rolling_7d")
 
     # Primary Execution: Authoritative Dual LightGBM Model (canteen_model.joblib)
     m_dem = artifact["model_demand"]

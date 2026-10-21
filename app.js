@@ -36,6 +36,9 @@ let cachedNgoKpis = null;
 let supplierDemandChartInstance = null;
 let canteenAnalyticsDemandChartInstance = null;
 let ngoRecoveryChartInstance = null;
+let canteenFinancialTrendChartInstance = null;
+let canteenActualVsPredictedChartInstance = null;
+let currentFinancialTimeframe = 'weekly';
 
 // =========================================================================
 // 1. AUTHENTICATION & SESSION PERSISTENCE
@@ -375,6 +378,107 @@ async function handleLoginSubmit(event) {
     }
 }
 
+// Mangalore Localities Coordinates Map for Frontend Preview & Geocoding
+const MANGALORE_LOCALITY_MAP = {
+    hampankatta: { name: 'Hampankatta, Mangalore', lat: 12.8683, lon: 74.8427, dist: 8.5 },
+    balmatta: { name: 'Balmatta, Mangalore', lat: 12.8703, lon: 74.8512, dist: 7.8 },
+    kodialbail: { name: 'Kodialbail, Mangalore', lat: 12.8762, lon: 74.8436, dist: 8.8 },
+    kadri: { name: 'Kadri, Mangalore', lat: 12.8834, lon: 74.8624, dist: 6.8 },
+    bejai: { name: 'Bejai, Mangalore', lat: 12.8856, lon: 74.8492, dist: 8.1 },
+    bendoor: { name: 'Bendoor, Mangalore', lat: 12.8732, lon: 74.8585, dist: 7.1 },
+    mangaladevi: { name: 'Mangaladevi, Mangalore', lat: 12.8528, lon: 74.8465, dist: 8.6 },
+    kankanady: { name: 'Kankanady, Mangalore', lat: 12.8647, lon: 74.8601, dist: 6.9 },
+    attavar: { name: 'Attavar, Mangalore', lat: 12.8611, lon: 74.8483, dist: 8.1 },
+    bunder: { name: 'Bunder, Mangalore', lat: 12.8620, lon: 74.8350, dist: 9.6 },
+    falnir: { name: 'Falnir, Mangalore', lat: 12.8652, lon: 74.8468, dist: 8.3 },
+    urwa: { name: 'Urwa, Mangalore', lat: 12.8885, lon: 74.8324, dist: 9.9 },
+    mannagudda: { name: 'Mannagudda, Mangalore', lat: 12.8812, lon: 74.8335, dist: 9.7 },
+    lalbagh: { name: 'Lalbagh, Mangalore', lat: 12.8810, lon: 74.8415, dist: 8.9 },
+    ladyhill: { name: 'Ladyhill, Mangalore', lat: 12.8892, lon: 74.8385, dist: 9.3 },
+    chilimbi: { name: 'Chilimbi, Mangalore', lat: 12.8955, lon: 74.8315, dist: 10.2 },
+    ashoknagar: { name: 'Ashoknagar, Mangalore', lat: 12.8980, lon: 74.8360, dist: 9.8 },
+    kottara: { name: 'Kottara, Mangalore', lat: 12.9035, lon: 74.8402, dist: 9.5 },
+    kavoor: { name: 'Kavoor, Mangalore', lat: 12.9230, lon: 74.8610, dist: 8.6 },
+    kulur: { name: 'Kulur, Mangalore', lat: 12.9215, lon: 74.8250, dist: 11.9 },
+    baikampady: { name: 'Baikampady, Mangalore', lat: 12.9465, lon: 74.8120, dist: 14.4 },
+    surathkal: { name: 'Surathkal, Mangalore', lat: 12.9810, lon: 74.8010, dist: 18.2 },
+    padil: { name: 'Padil, Mangalore', lat: 12.8685, lon: 74.8875, dist: 3.6 },
+    alape: { name: 'Alape, Mangalore', lat: 12.8650, lon: 74.8910, dist: 3.3 },
+    bikarnakatte: { name: 'Bikarnakatte, Mangalore', lat: 12.8785, lon: 74.8735, dist: 5.2 },
+    kulshekar: { name: 'Kulshekar, Mangalore', lat: 12.8870, lon: 74.8820, dist: 4.5 },
+    shaktinagar: { name: 'Shaktinagar, Mangalore', lat: 12.8985, lon: 74.8915, dist: 4.4 },
+    adyar: { name: 'Adyar, Mangalore', lat: 12.8665, lon: 74.9120, dist: 1.1 },
+    valachil: { name: 'Valachil, Mangalore', lat: 12.8718, lon: 74.9204, dist: 0.1 },
+    jeppu: { name: 'Jeppu, Mangalore', lat: 12.8505, lon: 74.8410, dist: 9.0 },
+    ullal: { name: 'Ullal, Mangalore', lat: 12.8055, lon: 74.8510, dist: 10.5 },
+    thokkottu: { name: 'Thokkottu, Mangalore', lat: 12.8250, lon: 74.8615, dist: 8.3 },
+    deralakatte: { name: 'Deralakatte, Mangalore', lat: 12.8175, lon: 74.8780, dist: 7.7 },
+    pumpwell: { name: 'Pumpwell, Mangalore', lat: 12.8610, lon: 74.8650, dist: 6.2 },
+    'car street': { name: 'Car Street, Mangalore', lat: 12.8710, lon: 74.8380, dist: 9.0 },
+    car_street: { name: 'Car Street, Mangalore', lat: 12.8710, lon: 74.8380, dist: 9.0 },
+    maryhill: { name: 'Maryhill, Mangalore', lat: 12.9120, lon: 74.8550, dist: 8.3 },
+    bondel: { name: 'Bondel, Mangalore', lat: 12.9250, lon: 74.8680, dist: 8.1 },
+    yeyyadi: { name: 'Yeyyadi, Mangalore', lat: 12.9050, lon: 74.8650, dist: 7.1 }
+};
+
+function onRegisterRoleChange() {
+    const roleSelect = document.getElementById('reg-role');
+    const ngoDetails = document.getElementById('reg-ngo-details');
+    const orgInput = document.getElementById('reg-org');
+    const orgLabel = document.getElementById('reg-org-label');
+
+    if (!roleSelect) return;
+    const role = roleSelect.value;
+
+    if (isNgoRole(role)) {
+        if (ngoDetails) ngoDetails.classList.remove('hidden');
+        if (orgInput) {
+            orgInput.value = '';
+            orgInput.placeholder = 'e.g. Mangalore Food Relief Network';
+        }
+        if (orgLabel) orgLabel.textContent = 'Relief Partner / NGO Name';
+    } else {
+        if (ngoDetails) ngoDetails.classList.add('hidden');
+        if (orgInput) {
+            orgInput.value = 'Srinivas Institute Canteen';
+            orgInput.placeholder = 'Srinivas Institute Canteen';
+        }
+        if (orgLabel) orgLabel.textContent = 'Canteen / Kitchen Hub';
+    }
+}
+
+function onRegisterMangaloreAreaChange() {
+    const areaSelect = document.getElementById('reg-mangalore-area');
+    const addressInput = document.getElementById('reg-address');
+    const feedback = document.getElementById('reg-location-feedback');
+
+    if (!areaSelect) return;
+    const key = areaSelect.value;
+
+    if (key && MANGALORE_LOCALITY_MAP[key]) {
+        const item = MANGALORE_LOCALITY_MAP[key];
+        if (addressInput) {
+            addressInput.value = `${item.name}`;
+        }
+        if (feedback) {
+            feedback.style.display = 'block';
+            feedback.style.color = '#10b981';
+            feedback.innerHTML = `<i class="ph ph-check-circle"></i> Verified Mangalore Area • ~${item.dist} km from Srinivas Campus (Valachil)`;
+        }
+    } else if (key === 'custom') {
+        if (addressInput && !addressInput.value) {
+            addressInput.value = 'Mangalore, Karnataka';
+        }
+        if (feedback) {
+            feedback.style.display = 'block';
+            feedback.style.color = '#f59e0b';
+            feedback.innerHTML = `<i class="ph ph-info"></i> Please ensure your entered street/building is within Mangalore corporation limits.`;
+        }
+    } else {
+        if (feedback) feedback.style.display = 'none';
+    }
+}
+
 // Pure Database-Backed Registration
 async function handleRegisterSubmit(event) {
     if (event) event.preventDefault();
@@ -424,33 +528,60 @@ async function handleRegisterSubmit(event) {
         return;
     }
 
+    const organization = org || (isCanteenRole(role) ? 'Srinivas Institute Canteen' : 'Registered NGO Partner');
+
+    const payload = {
+        name,
+        email,
+        password,
+        role,
+        organization
+    };
+
+    if (isNgoRole(role)) {
+        const areaSelect = document.getElementById('reg-mangalore-area');
+        const phoneInput = document.getElementById('reg-phone');
+        const addressInput = document.getElementById('reg-address');
+        const capacityInput = document.getElementById('reg-capacity');
+        const needInput = document.getElementById('reg-need-level');
+
+        const areaKey = areaSelect ? areaSelect.value : '';
+        const address = addressInput ? addressInput.value.trim() : '';
+
+        if (!address && !areaKey) {
+            showAuthAlert('Please select or enter your Mangalore locality address.', 'danger');
+            if (areaSelect) areaSelect.focus();
+            return;
+        }
+
+        // Client-side quick check for non-Mangalore cities
+        const nonMangalore = ['bangalore', 'bengaluru', 'mysore', 'mysuru', 'udupi', 'manipal', 'mumbai', 'delhi', 'chennai', 'hyderabad', 'pune', 'kochi', 'kasaragod', 'bhatkal', 'puttur', 'belthangady', 'sullia'];
+        const lowerAddr = address.toLowerCase();
+        for (const city of nonMangalore) {
+            if (lowerAddr.includes(city) && !lowerAddr.includes('mangalore') && !lowerAddr.includes('mangaluru')) {
+                showAuthAlert(`Service Area Restriction: Serviqo AI at Srinivas Campus operates strictly within Mangalore. The location '${address}' is outside Mangalore.`, 'danger');
+                if (addressInput) addressInput.focus();
+                return;
+            }
+        }
+
+        payload.phone = phoneInput ? phoneInput.value.trim() : null;
+        payload.address = address;
+        payload.capacity_persons = capacityInput ? (parseInt(capacityInput.value, 10) || 150) : 150;
+        payload.need_level = needInput ? needInput.value : 'medium';
+
+        if (areaKey && MANGALORE_LOCALITY_MAP[areaKey]) {
+            payload.latitude = MANGALORE_LOCALITY_MAP[areaKey].lat;
+            payload.longitude = MANGALORE_LOCALITY_MAP[areaKey].lon;
+        }
+    }
+
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Creating Account...`;
     }
 
     try {
-        const organization = org || (isCanteenRole(role) ? 'Srinivas Institute Canteen' : 'Registered NGO Partner');
-
-        const payload = {
-            name,
-            email,
-            password,
-            role,
-            organization
-        };
-
-        if (isNgoRole(role)) {
-            const phoneInput = document.getElementById('reg-phone');
-            const addressInput = document.getElementById('reg-address');
-            const capacityInput = document.getElementById('reg-capacity');
-            const needInput = document.getElementById('reg-need-level');
-
-            payload.phone = phoneInput ? phoneInput.value.trim() : null;
-            payload.address = addressInput ? addressInput.value.trim() : null;
-            payload.capacity_persons = capacityInput ? (parseInt(capacityInput.value, 10) || 150) : 150;
-            payload.need_level = needInput ? needInput.value : 'medium';
-        }
 
         const response = await fetch(`${API_BASE}/api/auth/register`, {
             method: 'POST',
@@ -745,6 +876,7 @@ function navigateTo(targetId) {
     } else if (targetId === 'canteen-demand') {
         checkMlStatus();
         initSupplierDemandChart();
+        syncCampusLiveWeather();
     } else if (targetId === 'canteen-inventory') {
         loadFullInventoryPage();
     } else if (targetId === 'canteen-recovery') {
@@ -963,6 +1095,14 @@ if (demandForecastForm) {
             popularity_level: popularity
         };
 
+        const isManualOverride = document.getElementById('demand-manual-history-toggle')?.checked;
+        if (isManualOverride) {
+            const manLag = parseFloat(document.getElementById('demand-manual-lag')?.value);
+            const manRoll = parseFloat(document.getElementById('demand-manual-rolling')?.value);
+            if (!isNaN(manLag) && manLag > 0) payload.manual_lag_7 = manLag;
+            if (!isNaN(manRoll) && manRoll > 0) payload.manual_rolling_7d = manRoll;
+        }
+
         const submitBtn = demandForecastForm.querySelector('button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -1036,6 +1176,125 @@ if (demandForecastForm) {
             }
         }
     });
+}
+
+// =========================================================================
+// ATTENDANCE AUTO-TALLY & LIVE WEATHER INTEGRATION
+// =========================================================================
+
+function initAttendanceAutoTally() {
+    const elAttendance = document.getElementById('demand-attendance');
+    const elHostel = document.getElementById('demand-hostel-attendance');
+    const elDayscholar = document.getElementById('demand-dayscholar-attendance');
+
+    if (!elAttendance || !elHostel || !elDayscholar) return;
+
+    let isUpdating = false;
+
+    // When Expected Attendance is entered
+    elAttendance.addEventListener('input', () => {
+        if (isUpdating) return;
+        isUpdating = true;
+        const total = parseInt(elAttendance.value) || 0;
+        const hostelVal = parseInt(elHostel.value);
+        if (!isNaN(hostelVal) && hostelVal <= total && hostelVal > 0) {
+            elDayscholar.value = Math.max(0, total - hostelVal);
+        } else if (total > 0) {
+            const h = Math.round(total * 0.65);
+            elHostel.value = h;
+            elDayscholar.value = total - h;
+        }
+        isUpdating = false;
+    });
+
+    // When Hostel Preorders is modified
+    elHostel.addEventListener('input', () => {
+        if (isUpdating) return;
+        isUpdating = true;
+        const total = parseInt(elAttendance.value) || 0;
+        const hostel = parseInt(elHostel.value) || 0;
+        if (total > 0) {
+            if (hostel <= total) {
+                elDayscholar.value = total - hostel;
+            } else {
+                elAttendance.value = hostel + (parseInt(elDayscholar.value) || 0);
+            }
+        } else if (hostel > 0) {
+            elAttendance.value = hostel + (parseInt(elDayscholar.value) || 0);
+        }
+        isUpdating = false;
+    });
+
+    // When Day Scholars is modified
+    elDayscholar.addEventListener('input', () => {
+        if (isUpdating) return;
+        isUpdating = true;
+        const total = parseInt(elAttendance.value) || 0;
+        const day = parseInt(elDayscholar.value) || 0;
+        if (total > 0) {
+            if (day <= total) {
+                elHostel.value = total - day;
+            } else {
+                elAttendance.value = (parseInt(elHostel.value) || 0) + day;
+            }
+        } else if (day > 0) {
+            elAttendance.value = (parseInt(elHostel.value) || 0) + day;
+        }
+        isUpdating = false;
+    });
+}
+
+async function syncCampusLiveWeather() {
+    const btn = document.getElementById('btn-sync-weather');
+    const statusEl = document.getElementById('weather-sync-status');
+    const elTemp = document.getElementById('demand-temperature');
+    const elRain = document.getElementById('demand-rainfall');
+    const elHum = document.getElementById('demand-humidity');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Fetching...`;
+    }
+
+    try {
+        // Srinivas Campus Coordinates (Mangalore: lat=12.87, lon=74.88)
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.87&longitude=74.88&current=temperature_2m,relative_humidity_2m,precipitation,weather_code');
+        if (!res.ok) throw new Error('Live weather service unreachable');
+        const data = await res.json();
+        const curr = data.current;
+
+        if (curr) {
+            const temp = Math.round(curr.temperature_2m * 10) / 10;
+            const hum = Math.round(curr.relative_humidity_2m);
+            const rain = Math.round((curr.precipitation || 0.0) * 10) / 10;
+
+            if (elTemp) elTemp.value = temp;
+            if (elHum) elHum.value = hum;
+            if (elRain) elRain.value = rain;
+
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color: var(--success-text);"><i class="ph ph-check-circle"></i> Live Weather Synced: Srinivas Campus (${temp}°C, ${hum}% Hum, ${rain} mm Rain)</span>`;
+            }
+        }
+    } catch (err) {
+        console.warn('Weather sync error:', err);
+        if (statusEl) {
+            statusEl.innerHTML = `<span style="color: var(--warning-text, #f59e0b);"><i class="ph ph-warning"></i> Weather service offline; standard campus defaults active.</span>`;
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="ph ph-cloud-sun"></i> Sync Live Weather`;
+        }
+    }
+}
+
+function toggleManualHistoryInputs() {
+    const toggle = document.getElementById('demand-manual-history-toggle');
+    const container = document.getElementById('demand-manual-history-fields');
+    if (container && toggle) {
+        container.style.display = toggle.checked ? 'grid' : 'none';
+    }
 }
 
 async function initSupplierDemandChart() {
@@ -1402,16 +1661,27 @@ function renderSupplierPostsTable(posts) {
     const tbody = document.getElementById('supplier-posts-tbody');
     if (!tbody) return;
 
-    if (!posts || posts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No surplus food currently published. Click "Publish Surplus Food" above to post available stock.</td></tr>`;
+    const activePosts = (posts || []).filter(p => p.status !== 'ARCHIVED' && p.status !== 'CANCELLED');
+
+    if (activePosts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted" style="padding: 2.5rem 1rem;">
+                    <i class="ph ph-storefront" style="font-size: 2.2rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+                    <strong style="font-size: 1.05rem; color: var(--text-primary);">No surplus food currently published.</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Click <strong>"Publish Surplus Food"</strong> above to broadcast newly available kitchen batches to partner NGOs.</p>
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    tbody.innerHTML = posts.map(post => {
-        const isFullyReserved = post.remaining_available <= 0;
+    tbody.innerHTML = activePosts.map(post => {
+        const remaining = Number(post.remaining_available !== undefined ? post.remaining_available : post.remaining_available_quantity) || 0;
+        const isFullyReserved = remaining <= 0;
         const statusBadge = isFullyReserved
             ? `<span class="badge badge-warning">Fully Reserved</span>`
-            : `<span class="badge badge-success">Available (${post.remaining_available} ${post.unit})</span>`;
+            : `<span class="badge badge-success">Available (${remaining} ${post.unit})</span>`;
 
         const pubTime = post.created_at ? new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today';
 
@@ -1420,7 +1690,7 @@ function renderSupplierPostsTable(posts) {
                 <td><strong>${post.food_item}</strong></td>
                 <td>${post.published_quantity} ${post.unit}</td>
                 <td><strong style="color: var(--warning-text);">${post.reserved_quantity || 0} ${post.unit}</strong></td>
-                <td><strong style="color: var(--success-text); font-size: 1.05rem;">${post.remaining_available} ${post.unit}</strong></td>
+                <td><strong style="color: var(--success-text); font-size: 1.05rem;">${remaining} ${post.unit}</strong></td>
                 <td><span class="badge badge-warning">${post.available_until || 'Today 4:00 PM'}</span></td>
                 <td style="font-size: 0.82rem; color: var(--text-secondary);">${post.pickup_location || 'Canteen Gate 2'}</td>
                 <td style="font-size: 0.82rem; color: var(--text-muted);">${pubTime}</td>
@@ -1474,33 +1744,35 @@ function renderSupplierPickupsTable(requests) {
     const tbody = document.getElementById('supplier-pickups-tbody');
     if (!tbody) return;
 
-    const pickups = requests.filter(r => r.status === 'SCHEDULED' || r.status === 'ACCEPTED' || r.status === 'COLLECTED');
+    // Only show active pickups awaiting schedule or awaiting handover
+    const pickups = requests.filter(r => r.status === 'SCHEDULED' || r.status === 'ACCEPTED');
 
     if (pickups.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No pickups currently scheduled. Accept an incoming request and assign a pickup schedule.</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted" style="padding: 2.5rem 1rem;">
+                    <i class="ph ph-truck" style="font-size: 2.2rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+                    <strong style="font-size: 1.05rem; color: var(--text-primary);">No active pickups currently scheduled.</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">When an incoming organization request is accepted and assigned a pickup slot, it will appear here awaiting collection.</p>
+                </td>
+            </tr>
+        `;
         return;
     }
 
     tbody.innerHTML = pickups.map(r => {
-        let badge = `<span class="badge badge-info">ACCEPTED</span>`;
+        let badge = `<span class="badge badge-warning"><i class="ph ph-calendar-plus"></i> Needs Schedule</span>`;
         let actionBtn = `
-            <button class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="openSchedulePickupModal(${r.id}, '${r.organization_name.replace(/'/g, "\\'")}', '${r.food_item.replace(/'/g, "\\'")}', ${r.requested_quantity}, '${r.unit}')">
+            <button class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="openSchedulePickupModal(${r.id}, '${r.organization_name.replace(/'/g, "\\'")}', '${r.food_item.replace(/'/g, "\\'")}', ${r.requested_quantity}, '${r.unit}')">
                 <i class="ph ph-calendar-plus"></i> Schedule Pickup
             </button>
         `;
 
         if (r.status === 'SCHEDULED') {
-            badge = `<span class="badge badge-warning">SCHEDULED</span>`;
+            badge = `<span class="badge badge-info"><i class="ph ph-clock"></i> Scheduled</span>`;
             actionBtn = `
-                <button class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: var(--primary);" onclick="handleSupplierMarkCollected(${r.id})">
-                    <i class="ph ph-check"></i> Mark Collected
-                </button>
-            `;
-        } else if (r.status === 'COLLECTED') {
-            badge = `<span class="badge badge-success">COLLECTED</span>`;
-            actionBtn = `
-                <button class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: var(--success); border-color: var(--success);" onclick="handleSupplierMarkCompleted(${r.id})">
-                    <i class="ph ph-seal-check"></i> Mark Completed
+                <button class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; background: var(--success); border-color: var(--success);" onclick="handleSupplierVerifyHandover(${r.id})">
+                    <i class="ph ph-seal-check"></i> Verify Handover & Complete
                 </button>
             `;
         }
@@ -1512,7 +1784,7 @@ function renderSupplierPickupsTable(requests) {
                 <td>${r.requested_quantity} ${r.unit}</td>
                 <td><strong>${r.pickup_date || 'Today'}</strong></td>
                 <td><strong style="color: var(--primary);">${r.pickup_time || r.preferred_pickup_time || '2:00 PM'}</strong></td>
-                <td style="font-size: 0.82rem; color: var(--text-secondary);">${r.pickup_location || 'Srinivas Campus Canteen'}</td>
+                <td style="font-size: 0.82rem; color: var(--text-secondary);">${r.pickup_location || 'Srinivas Campus Canteen Gate 2'}</td>
                 <td>${badge}</td>
                 <td>${actionBtn}</td>
             </tr>
@@ -1524,28 +1796,51 @@ function renderSupplierHistoryTable(requests) {
     const tbody = document.getElementById('supplier-history-tbody');
     if (!tbody) return;
 
-    const history = requests.filter(r => r.status === 'COMPLETED' || r.status === 'REJECTED' || r.status === 'CANCELLED');
+    const history = requests.filter(r => r.status === 'COMPLETED' || r.status === 'COLLECTED' || r.status === 'REJECTED' || r.status === 'CANCELLED');
 
     if (history.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No completed or closed transactions yet. Completed donations will appear here.</td></tr>`;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted" style="padding: 2.5rem 1rem;">
+                    <i class="ph ph-clock-counter-clockwise" style="font-size: 2.2rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;"></i>
+                    <strong style="font-size: 1.05rem; color: var(--text-primary);">No completed donation history records yet.</strong>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Once a scheduled food pickup is verified and handed over at the gate, full audit records will appear here.</p>
+                </td>
+            </tr>
+        `;
         return;
     }
 
     tbody.innerHTML = history.map(r => {
-        const isSuccess = r.status === 'COMPLETED';
-        const badge = isSuccess ? `<span class="badge badge-success">COMPLETED</span>` : `<span class="badge badge-danger">${r.status}</span>`;
-        const timeStr = r.completed_at ? new Date(r.completed_at).toLocaleString() : (r.accepted_at ? new Date(r.accepted_at).toLocaleString() : 'Recorded today');
+        const isSuccess = r.status === 'COMPLETED' || r.status === 'COLLECTED';
+        const badge = isSuccess
+            ? `<span class="badge badge-success"><i class="ph ph-seal-check"></i> Handover Verified</span>`
+            : `<span class="badge badge-danger">${r.status}</span>`;
+
+        const timeStr = r.completed_at ? new Date(r.completed_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : (r.accepted_at ? new Date(r.accepted_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recorded');
+        const qtyStr = `${r.fulfilled_quantity || r.requested_quantity} ${r.unit}`;
+        const slotStr = r.pickup_date ? `${r.pickup_date} (${r.pickup_time || '2:00 PM'})` : 'Direct Dispatch';
+        const portions = Math.max(1, Math.round((parseFloat(r.fulfilled_quantity || r.requested_quantity) || 1) * (r.unit === 'plates' ? 1 : 3)));
+
+        const auditDetail = isSuccess
+            ? `<div style="font-size: 0.82rem; color: var(--text-secondary);">
+                 <span>Handover confirmed at <strong>${r.pickup_location || 'Gate 2 Canteen'}</strong></span>
+                 <div style="color: var(--success-text); margin-top: 2px;"><i class="ph ph-sparkle"></i> Diverted ~${portions} meals from waste</div>
+               </div>`
+            : `<div style="font-size: 0.82rem; color: var(--text-muted);">Request rejected; reserved stock released back to inventory.</div>`;
 
         return `
             <tr>
-                <td style="font-size: 0.82rem; color: var(--text-muted);">${timeStr}</td>
-                <td><strong>${r.organization_name}</strong></td>
-                <td><strong>${r.food_item}</strong></td>
-                <td>${r.requested_quantity} ${r.unit}</td>
-                <td>${badge}</td>
-                <td style="font-size: 0.82rem; color: var(--text-secondary);">
-                    ${isSuccess ? `Recovered & verified distribution. Pickup completed at ${r.pickup_location || 'Canteen'}.` : 'Request rejected; reserved stock released back to availability.'}
+                <td style="font-size: 0.82rem; color: var(--text-primary);"><strong>${timeStr}</strong></td>
+                <td>
+                    <strong>${r.organization_name}</strong>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Ref: #SRN-REC-${String(r.id).padStart(3, '0')}</div>
                 </td>
+                <td><strong>${r.food_item}</strong></td>
+                <td><strong style="color: var(--primary); font-size: 1.02rem;">${qtyStr}</strong></td>
+                <td style="font-size: 0.82rem; color: var(--text-secondary);">${slotStr}</td>
+                <td>${badge}</td>
+                <td>${auditDetail}</td>
             </tr>
         `;
     }).join('');
@@ -1770,27 +2065,9 @@ async function submitSchedulePickup(event) {
     }
 }
 
-async function handleSupplierMarkCollected(requestId) {
-    try {
-        const res = await fetch(`${API_BASE}/api/redistribution/requests/${requestId}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'COLLECTED' })
-        });
+async function handleSupplierVerifyHandover(requestId) {
+    if (!confirm('Confirm food collection and handover to partner organization? This will complete the distribution and permanently archive it to Donation History.')) return;
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Failed to mark collected');
-
-        showToast('Donation marked as COLLECTED. Handover verified.', 'info');
-        loadCanteenRecoveryTable();
-
-    } catch (err) {
-        console.error('Error marking collected:', err);
-        showToast(err.message || 'Failed to update status.', 'danger');
-    }
-}
-
-async function handleSupplierMarkCompleted(requestId) {
     try {
         const res = await fetch(`${API_BASE}/api/redistribution/requests/${requestId}/status`, {
             method: 'PUT',
@@ -1799,16 +2076,24 @@ async function handleSupplierMarkCompleted(requestId) {
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Failed to mark completed');
+        if (!res.ok) throw new Error(data.detail || 'Failed to complete handover');
 
-        showToast('Donation transaction marked COMPLETED and archived to history!', 'success');
+        showToast('Donation handover verified & successfully completed! Moved to Donation History.', 'success');
         loadCanteenRecoveryTable();
         switchSupplierRedistTab('history');
 
     } catch (err) {
-        console.error('Error marking completed:', err);
-        showToast(err.message || 'Failed to complete transaction.', 'danger');
+        console.error('Error verifying handover:', err);
+        showToast(err.message || 'Failed to update status.', 'danger');
     }
+}
+
+async function handleSupplierMarkCollected(requestId) {
+    return handleSupplierVerifyHandover(requestId);
+}
+
+async function handleSupplierMarkCompleted(requestId) {
+    return handleSupplierVerifyHandover(requestId);
 }
 
 // Backward Compatibility Aliases for Legacy Modals
@@ -1839,7 +2124,7 @@ let canteenNgoMarkers = [];
 
 async function loadCanteenNgos() {
     try {
-        const res = await fetch(`${API_BASE}/api/ngos`);
+        const res = await fetch(`${API_BASE}/api/ngos?latitude=12.8718&longitude=74.9204`);
         if (!res.ok) throw new Error('Failed to fetch NGOs');
         const data = await res.json();
         cachedNgos = data.ngos || [];
@@ -1906,7 +2191,7 @@ function initCanteenNgoMap() {
 
             const marker = L.marker([lat, lon], { icon: ngoIcon }).addTo(canteenNgoMap);
             marker.bindPopup(`
-                <div style="font-family: inherit; padding: 4px; min-width: 200px;">
+                <div style="font-family: inherit; padding: 4px; min-width: 220px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                         <strong style="font-size: 0.95rem; color: #1e293b;">${ngo.name}</strong>
                     </div>
@@ -1914,7 +2199,7 @@ function initCanteenNgoMap() {
                         <span style="display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${iconBg}20; color: ${iconBg};">
                             ${vStatus}
                         </span>
-                        <span style="margin-left: 4px; color: #64748b;">${ngo.distance_km || 0} km away</span>
+                        <span style="margin-left: 6px; font-weight: 600; color: #0284c7;"><i class="ph ph-map-pin"></i> ${ngo.distance_km !== undefined ? ngo.distance_km : 0} km from Srinivas Campus</span>
                     </div>
                     <div style="font-size: 0.8rem; color: #475569; line-height: 1.4;">
                         👥 Capacity: <strong>${ngo.capacity_persons || ngo.capacity_people || 150}</strong> people/day<br>
@@ -1991,12 +2276,14 @@ function renderNgoPartnersList() {
             `;
         }
 
+        const distStr = ngo.distance_km !== undefined ? `${ngo.distance_km} km` : 'Calculated on Map';
+
         return `
             <div class="card" style="margin: 0; padding: 1.25rem;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
                     <div>
                         <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">${ngo.name}</h3>
-                        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;"><i class="ph ph-map-pin"></i> ${ngo.distance_km || 1.5} km from Srinivas Campus</p>
+                        <p style="font-size: 0.82rem; color: var(--primary); font-weight: 600; margin: 2px 0 0 0;"><i class="ph ph-map-pin"></i> ${distStr} from Srinivas Campus</p>
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
                         <span class="badge ${isHigh ? 'badge-danger' : 'badge-warning'}">${(ngo.need_level || 'Medium').toUpperCase()} NEED</span>
@@ -2094,6 +2381,7 @@ async function loadCanteenAnalytics() {
         }
 
         initCanteenAnalyticsChart();
+        loadCanteenFinancialAnalytics(currentFinancialTimeframe);
 
     } catch (err) {
         console.error('Error loading canteen analytics:', err);
@@ -2188,6 +2476,324 @@ async function initCanteenAnalyticsChart() {
             }
         }
     });
+}
+
+// =========================================================================
+// CANTEEN FINANCIALS & ACTUALS RECONCILIATION
+// =========================================================================
+
+async function loadCanteenFinancialAnalytics(timeframe = 'weekly') {
+    currentFinancialTimeframe = timeframe;
+    try {
+        const auth = getAuth();
+        const headers = {};
+        if (auth && auth.email) {
+            headers['x-user-email'] = auth.email;
+        }
+
+        const res = await fetch(`${API_BASE}/api/canteen/financial-analytics?view=${timeframe}`, { headers });
+        if (!res.ok) throw new Error('Financial analytics fetch failed');
+        const data = await res.json();
+        const kpi = data.kpis;
+
+        const elRev = document.getElementById('fin-kpi-revenue');
+        const elExp = document.getElementById('fin-kpi-expense');
+        const elProf = document.getElementById('fin-kpi-profit');
+        const elMargin = document.getElementById('fin-kpi-margin');
+        const elSavings = document.getElementById('fin-kpi-savings');
+        const elServSub = document.getElementById('fin-kpi-servings-sub');
+        const elAccBadge = document.getElementById('fin-kpi-acc-badge');
+        const timeBadge = document.getElementById('fin-chart-time-badge');
+
+        if (elRev) elRev.textContent = `₹${Math.round(kpi.total_revenue || 0).toLocaleString('en-IN')}`;
+        if (elExp) elExp.textContent = `₹${Math.round(kpi.total_expense || 0).toLocaleString('en-IN')}`;
+        if (elProf) elProf.textContent = `₹${Math.round(kpi.net_profit || 0).toLocaleString('en-IN')}`;
+        if (elMargin) elMargin.textContent = `${kpi.margin_pct >= 0 ? '+' : ''}${kpi.margin_pct}% Margin`;
+        if (elSavings) elSavings.textContent = `₹${Math.round(kpi.waste_cost_saved || 0).toLocaleString('en-IN')}`;
+        if (elServSub) elServSub.innerHTML = `<span class="badge badge-info">${(kpi.total_servings || 0).toLocaleString('en-IN')} Meals Sold</span>`;
+        if (elAccBadge) elAccBadge.textContent = `${kpi.prediction_accuracy_pct}% Forecast Accuracy`;
+        if (timeBadge) timeBadge.textContent = timeframe === 'weekly' ? '7-Day Rolling Cash Flow' : 'Monthly Performance Trend';
+
+        // Expense breakdown bars
+        const bd = data.breakdown || {};
+        const elIngVal = document.getElementById('exp-bar-val-ingredients');
+        const elIngFill = document.getElementById('exp-bar-fill-ingredients');
+        const elWagesVal = document.getElementById('exp-bar-val-wages');
+        const elWagesFill = document.getElementById('exp-bar-fill-wages');
+        const elUtilVal = document.getElementById('exp-bar-val-utilities');
+        const elUtilFill = document.getElementById('exp-bar-fill-utilities');
+
+        if (elIngVal) elIngVal.textContent = `${bd.ingredients_pct || 75}%`;
+        if (elIngFill) elIngFill.style.width = `${bd.ingredients_pct || 75}%`;
+        if (elWagesVal) elWagesVal.textContent = `${bd.wages_pct || 18}%`;
+        if (elWagesFill) elWagesFill.style.width = `${bd.wages_pct || 18}%`;
+        if (elUtilVal) elUtilVal.textContent = `${bd.utilities_pct || 7}%`;
+        if (elUtilFill) elUtilFill.style.width = `${bd.utilities_pct || 7}%`;
+
+        // Render charts
+        initCanteenFinancialCharts(data);
+
+    } catch (err) {
+        console.warn('Error loading canteen financial analytics:', err);
+    }
+}
+
+function setFinancialTimeframe(timeframe) {
+    currentFinancialTimeframe = timeframe;
+    const btnWeekly = document.getElementById('btn-finance-weekly');
+    const btnMonthly = document.getElementById('btn-finance-monthly');
+
+    if (btnWeekly && btnMonthly) {
+        if (timeframe === 'weekly') {
+            btnWeekly.className = 'btn-primary';
+            btnWeekly.style.background = '';
+            btnWeekly.style.border = '';
+            btnMonthly.className = 'btn-secondary';
+            btnMonthly.style.background = 'transparent';
+            btnMonthly.style.border = 'none';
+        } else {
+            btnMonthly.className = 'btn-primary';
+            btnMonthly.style.background = '';
+            btnMonthly.style.border = '';
+            btnWeekly.className = 'btn-secondary';
+            btnWeekly.style.background = 'transparent';
+            btnWeekly.style.border = 'none';
+        }
+    }
+
+    loadCanteenFinancialAnalytics(timeframe);
+}
+
+function initCanteenFinancialCharts(data) {
+    const finCtx = document.getElementById('canteenFinancialTrendChart');
+    const actCtx = document.getElementById('canteenActualVsPredictedChart');
+
+    const finData = data.financial_chart || {};
+    const demData = data.demand_comparison_chart || {};
+
+    const isLight = document.documentElement.getAttribute('data-theme') !== 'dark';
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)';
+    const tickColor = isLight ? '#475569' : '#94a3b8';
+
+    // 1. Cash Flow Bar/Line Chart
+    if (finCtx) {
+        if (canteenFinancialTrendChartInstance) {
+            canteenFinancialTrendChartInstance.destroy();
+        }
+
+        canteenFinancialTrendChartInstance = new Chart(finCtx, {
+            type: 'bar',
+            data: {
+                labels: finData.labels || [],
+                datasets: [
+                    {
+                        label: 'Sales Revenue (₹)',
+                        data: finData.revenue || [],
+                        backgroundColor: 'rgba(44, 168, 91, 0.75)',
+                        borderColor: '#2ca85b',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Operating Expenses (₹)',
+                        data: finData.expense || [],
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Net Profit (₹)',
+                        data: finData.profit || [],
+                        type: 'line',
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: tickColor, font: { family: 'Inter', size: 11, weight: 600 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ₹${Number(context.raw).toLocaleString('en-IN')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: tickColor, font: { family: 'Inter', size: 10 } } },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: tickColor,
+                            font: { family: 'Inter', size: 10 },
+                            callback: value => '₹' + (value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value)
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Predicted vs Actual Servings Line Chart
+    if (actCtx) {
+        if (canteenActualVsPredictedChartInstance) {
+            canteenActualVsPredictedChartInstance.destroy();
+        }
+
+        canteenActualVsPredictedChartInstance = new Chart(actCtx, {
+            type: 'line',
+            data: {
+                labels: demData.labels || [],
+                datasets: [
+                    {
+                        label: 'AI Forecast (Servings)',
+                        data: demData.predicted || [],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                        borderWidth: 2.5,
+                        borderDash: [5, 4],
+                        tension: 0.3,
+                        pointRadius: 3
+                    },
+                    {
+                        label: 'Actual Servings Sold',
+                        data: demData.actual || [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        borderWidth: 2.5,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: tickColor, font: { family: 'Inter', size: 11, weight: 600 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.dataset.label}: ${context.raw} portions`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: tickColor, font: { family: 'Inter', size: 10 } } },
+                    y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { family: 'Inter', size: 10 } }, beginAtZero: false }
+                }
+            }
+        });
+    }
+}
+
+// Modal Handlers
+function openDailyClosingModal() {
+    const modal = document.getElementById('daily-closing-modal');
+    if (!modal) return;
+    const dateInput = document.getElementById('close-date');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    calculateClosingTotals();
+    modal.classList.add('active');
+}
+
+function closeDailyClosingModal() {
+    const modal = document.getElementById('daily-closing-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function calculateClosingTotals() {
+    const wages = parseFloat(document.getElementById('close-staff-wages')?.value) || 0;
+    const ingredients = parseFloat(document.getElementById('close-ingredient-expense')?.value) || 0;
+    const utilities = parseFloat(document.getElementById('close-utility-expense')?.value) || 0;
+    const revenue = parseFloat(document.getElementById('close-total-revenue')?.value) || 0;
+
+    const totExp = wages + ingredients + utilities;
+    const profit = revenue - totExp;
+
+    const expEl = document.getElementById('close-preview-expense');
+    const profEl = document.getElementById('close-preview-profit');
+
+    if (expEl) expEl.textContent = `₹${totExp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (profEl) {
+        profEl.textContent = `₹${profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        profEl.style.color = profit >= 0 ? '#10b981' : '#ef4444';
+    }
+}
+
+async function submitDailyClosing(e) {
+    e.preventDefault();
+    const submitBtn = document.getElementById('close-submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Saving...`;
+    }
+
+    const payload = {
+        date: document.getElementById('close-date')?.value || new Date().toISOString().split('T')[0],
+        actual_servings: parseInt(document.getElementById('close-actual-servings')?.value) || 0,
+        staff_count: parseInt(document.getElementById('close-staff-count')?.value) || 0,
+        staff_wages: parseFloat(document.getElementById('close-staff-wages')?.value) || 0,
+        ingredient_expense: parseFloat(document.getElementById('close-ingredient-expense')?.value) || 0,
+        utility_expense: parseFloat(document.getElementById('close-utility-expense')?.value) || 0,
+        total_revenue: parseFloat(document.getElementById('close-total-revenue')?.value) || 0,
+        notes: document.getElementById('close-notes')?.value || null
+    };
+
+    try {
+        const auth = getAuth();
+        const headers = { 'Content-Type': 'application/json' };
+        if (auth && auth.email) {
+            headers['x-user-email'] = auth.email;
+        }
+
+        const res = await fetch(`${API_BASE}/api/canteen/daily-closing`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Failed to save daily closing.');
+        }
+
+        closeDailyClosingModal();
+        showToast('Daily kitchen closing & actual demand reconciled successfully!', 'success');
+        
+        // Refresh financial dashboard and home stats
+        loadCanteenFinancialAnalytics(currentFinancialTimeframe);
+        loadCanteenHomeData();
+
+    } catch (err) {
+        console.error('Error submitting daily closing:', err);
+        showToast(err.message || 'Error recording daily closing', 'danger');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="ph ph-check-circle"></i> Save Daily Closing`;
+        }
+    }
 }
 
 // --- 3.7 Canteen Announcements ---
@@ -3188,7 +3794,7 @@ function applyTheme(theme) {
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)';
     const tickColor = isLight ? '#475569' : '#94a3b8';
 
-    [supplierDemandChartInstance, canteenAnalyticsDemandChartInstance, ngoRecoveryChartInstance].forEach(chart => {
+    [supplierDemandChartInstance, canteenAnalyticsDemandChartInstance, ngoRecoveryChartInstance, canteenFinancialTrendChartInstance, canteenActualVsPredictedChartInstance].forEach(chart => {
         if (chart && chart.options && chart.options.scales) {
             if (chart.options.scales.x && chart.options.scales.x.ticks) {
                 chart.options.scales.x.ticks.color = tickColor;
@@ -3380,6 +3986,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Restore Saved Theme (defaults to light mode)
     const savedTheme = localStorage.getItem('serviqo_theme') || 'light';
     applyTheme(savedTheme);
+
+    // Initialize Attendance Auto-Tally listener
+    initAttendanceAutoTally();
 
     // Bind sidebar buttons
     const sidebarBtns = document.querySelectorAll('.sidebar-btn[data-target]');

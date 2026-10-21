@@ -126,6 +126,21 @@ def enforce_ngo_organization_id(request: Request, client_org_id: Optional[int] =
     )
 
 
+def enforce_canteen_staff_role(request: Request):
+    """
+    Ensures financial metrics and kitchen closing logs are strictly accessible
+    only to Canteen / Kitchen staff, rejecting any NGO access.
+    """
+    user = get_authenticated_user_context(request)
+    if user:
+        role = (user.get("role") or "").strip().lower()
+        if "ngo" in role or "relief" in role:
+            raise HTTPException(
+                status_code=403,
+                detail="Access Denied: Canteen operational finances are restricted strictly to kitchen staff."
+            )
+
+
 # ==========================================
 # STARTUP HEALTH CHECK & SCHEMA VERIFICATION
 # ==========================================
@@ -260,10 +275,23 @@ class DemandForecastRequest(BaseModel):
     previous_demand: Optional[int] = None
     avg_7day_demand: Optional[int] = None
     rolling_avg_7day: Optional[int] = None
+    manual_lag_7: Optional[float] = None
+    manual_rolling_7d: Optional[float] = None
 
 
 class ActualDemandRecordRequest(BaseModel):
     actual_demand: int = Field(..., ge=0, example=155, description="Actual meal servings consumed (ground truth)")
+
+
+class CanteenDailyClosingRequest(BaseModel):
+    actual_servings: int = Field(..., ge=0, example=395, description="Actual meal servings sold/consumed")
+    staff_count: int = Field(0, ge=0, example=5, description="Number of staff on duty")
+    staff_wages: float = Field(0.0, ge=0.0, example=2500.0, description="Total staff wages for the day")
+    ingredient_expense: float = Field(0.0, ge=0.0, example=11200.0, description="Cost of ingredients, vegetables, groceries")
+    utility_expense: Optional[float] = Field(0.0, ge=0.0, example=1000.0, description="Gas, power, and utility costs")
+    total_revenue: float = Field(..., ge=0.0, example=19750.0, description="Total sales income for the day")
+    date: Optional[str] = Field(None, example="2026-10-21", description="Date of shift closing (YYYY-MM-DD)")
+    notes: Optional[str] = Field(None, example="Regular academic day operations")
 
 
 
@@ -304,7 +332,8 @@ def register(req: UserRegister):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Database registration failed. Please try again.")
+        print(f"[Registration Error] {e}")
+        raise HTTPException(status_code=500, detail=f"Database registration failed: {str(e)}")
 
 
 @app.post("/auth/login")
@@ -405,6 +434,52 @@ def canteen_dashboard():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch canteen dashboard KPIs: {e}")
+
+
+@app.get("/api/canteen/financial-analytics")
+def get_canteen_financial_analytics_endpoint(
+    request: Request,
+    view: str = Query("weekly", description="'weekly' or 'monthly'")
+):
+    """
+    Returns weekly/monthly income, expenses, profit margin, and AI waste savings.
+    Strictly isolated for Canteen Staff view only; blocked for NGO partners.
+    """
+    enforce_canteen_staff_role(request)
+    try:
+        return db.get_canteen_financial_analytics(view=view)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch financial analytics: {e}")
+
+
+@app.post("/api/canteen/daily-closing")
+def log_canteen_daily_closing_endpoint(
+    req: CanteenDailyClosingRequest,
+    request: Request
+):
+    """
+    Records daily kitchen shift closing (actual demand, staff labor, procurement, revenue).
+    Reconciles with ground truth actual_demand. Canteen staff only.
+    """
+    enforce_canteen_staff_role(request)
+    try:
+        record = db.log_canteen_daily_closing(
+            actual_servings=req.actual_servings,
+            staff_count=req.staff_count,
+            staff_wages=req.staff_wages,
+            ingredient_expense=req.ingredient_expense,
+            utility_expense=req.utility_expense or 0.0,
+            total_revenue=req.total_revenue,
+            date_str=req.date,
+            notes=req.notes
+        )
+        return {
+            "success": True,
+            "message": "Daily kitchen closing and financials recorded successfully.",
+            "data": record
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to log daily closing: {e}")
 
 
 @app.get("/api/dashboard/ngo")
@@ -555,7 +630,9 @@ def generate_kitchen_demand(req: DemandForecastRequest):
             academic_status=req.academic_status,
             college_event=req.college_event,
             holiday_name=req.holiday_name,
-            historical_features=historical_features
+            historical_features=historical_features,
+            manual_lag_7=req.manual_lag_7,
+            manual_rolling_7d=req.manual_rolling_7d
         )
     except RuntimeError as re:
         raise HTTPException(status_code=503, detail=str(re))
@@ -634,6 +711,25 @@ def get_ml_metrics():
 # ==========================================
 # NGOS & SUPPLIERS DIRECTORY
 # ==========================================
+@app.get("/api/mangalore-localities")
+def get_mangalore_localities():
+    """Returns curated Mangalore municipal wards, localities, and anchor GPS coordinates."""
+    localities = [
+        {"id": k, "name": v[2], "latitude": v[0], "longitude": v[1]}
+        for k, v in db.MANGALORE_LOCALITIES.items()
+    ]
+    localities.sort(key=lambda x: x["name"])
+    return {
+        "service_area": "Mangalore Municipal Corporation, Karnataka",
+        "campus_anchor": {
+            "name": "Srinivas Institute Canteen (Valachil)",
+            "latitude": db.SRINIVAS_CAMPUS_LAT,
+            "longitude": db.SRINIVAS_CAMPUS_LON
+        },
+        "localities": localities
+    }
+
+
 @app.get("/api/ngos")
 @app.get("/ngos")
 def get_ngos(

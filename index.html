@@ -483,8 +483,63 @@
                                         <input type="tel" id="reg-phone" class="form-control" placeholder="+91 98450 12345">
                                     </div>
                                     <div class="form-group" style="margin-bottom: 0;">
-                                        <label for="reg-address" style="font-size: 0.8rem; font-weight: 600;">Physical Address / Location</label>
-                                        <input type="text" id="reg-address" class="form-control" placeholder="e.g. Kodialbail, Mangalore, Karnataka">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <label for="reg-mangalore-area" style="font-size: 0.8rem; font-weight: 600;">Mangalore Area / Locality</label>
+                                            <span class="badge badge-success" style="font-size: 0.68rem; padding: 2px 6px;"><i class="ph ph-map-pin"></i> Mangalore Region Only</span>
+                                        </div>
+                                        <select id="reg-mangalore-area" class="form-control" onchange="onRegisterMangaloreAreaChange()">
+                                            <option value="">-- Select Mangalore Locality --</option>
+                                            <optgroup label="Central Mangalore">
+                                                <option value="hampankatta">Hampankatta</option>
+                                                <option value="balmatta">Balmatta</option>
+                                                <option value="kodialbail">Kodialbail</option>
+                                                <option value="kadri">Kadri</option>
+                                                <option value="bejai">Bejai</option>
+                                                <option value="bendoor">Bendoor</option>
+                                                <option value="mangaladevi">Mangaladevi</option>
+                                                <option value="kankanady">Kankanady</option>
+                                                <option value="attavar">Attavar</option>
+                                                <option value="falnir">Falnir</option>
+                                                <option value="bunder">Bunder (Old Port)</option>
+                                                <option value="lalbagh">Lalbagh</option>
+                                                <option value="car street">Car Street</option>
+                                            </optgroup>
+                                            <optgroup label="North Mangalore">
+                                                <option value="ladyhill">Ladyhill</option>
+                                                <option value="urwa">Urwa / Urwa Stores</option>
+                                                <option value="mannagudda">Mannagudda</option>
+                                                <option value="chilimbi">Chilimbi</option>
+                                                <option value="ashoknagar">Ashoknagar</option>
+                                                <option value="kottara">Kottara / Kottara Chowki</option>
+                                                <option value="kavoor">Kavoor</option>
+                                                <option value="kulur">Kulur</option>
+                                                <option value="maryhill">Maryhill</option>
+                                                <option value="bondel">Bondel</option>
+                                                <option value="yeyyadi">Yeyyadi</option>
+                                                <option value="baikampady">Baikampady</option>
+                                                <option value="surathkal">Surathkal</option>
+                                            </optgroup>
+                                            <optgroup label="East & South Mangalore">
+                                                <option value="padil">Padil</option>
+                                                <option value="alape">Alape</option>
+                                                <option value="pumpwell">Pumpwell</option>
+                                                <option value="bikarnakatte">Bikarnakatte</option>
+                                                <option value="kulshekar">Kulshekar</option>
+                                                <option value="shaktinagar">Shaktinagar</option>
+                                                <option value="adyar">Adyar</option>
+                                                <option value="valachil">Valachil (Near Srinivas Campus)</option>
+                                                <option value="jeppu">Jeppu</option>
+                                                <option value="thokkottu">Thokkottu</option>
+                                                <option value="deralakatte">Deralakatte</option>
+                                                <option value="ullal">Ullal</option>
+                                            </optgroup>
+                                            <option value="custom">Other Mangalore Location (Manual Entry)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="reg-address" style="font-size: 0.8rem; font-weight: 600;">Building / Street Address in Mangalore</label>
+                                        <input type="text" id="reg-address" class="form-control" placeholder="e.g. Near Kadri Temple Road, Kadri, Mangalore 575002">
+                                        <div id="reg-location-feedback" style="font-size: 0.75rem; color: #10b981; margin-top: 4px; display: none;"></div>
                                     </div>
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                                         <div class="form-group" style="margin-bottom: 0;">
@@ -754,9 +809,20 @@
                                     <input type="number" id="demand-dayscholar-attendance" class="form-control" placeholder="e.g. 50">
                                 </div>
                             </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: -0.25rem; margin-bottom: 0.75rem;">
+                                <i class="ph ph-arrows-left-right"></i> Auto-synchronized: <strong>Expected Attendance = Hostel + Day Scholars</strong>
+                            </div>
 
                             <!-- Section 2: Weather & Environment -->
-                            <div class="form-section-title">Environmental Factors</div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; margin-bottom: 0.35rem;">
+                                <div class="form-section-title" style="margin: 0;">Environmental Factors</div>
+                                <button type="button" id="btn-sync-weather" class="btn-secondary" style="font-size: 0.76rem; padding: 0.25rem 0.6rem;" onclick="syncCampusLiveWeather()">
+                                    <i class="ph ph-cloud-sun"></i> Sync Live Weather
+                                </button>
+                            </div>
+                            <div id="weather-sync-status" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                <i class="ph ph-map-pin"></i> Srinivas Institute Campus, Mangalore
+                            </div>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
                                 <div class="form-group">
                                     <label for="demand-temperature">Temperature (°C)</label>
@@ -815,6 +881,24 @@
                                         <i class="ph ph-database"></i> Automated History
                                     </div>
                                     <span>7-Day Lag &amp; 7-Day Rolling Mean derived automatically from verified database records.</span>
+                                </div>
+                            </div>
+
+                            <!-- Manual Override for 7-Day Lag & Rolling Mean -->
+                            <div style="margin-top: 0.75rem; background: var(--bg-surface-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-bottom: 0;">
+                                    <input type="checkbox" id="demand-manual-history-toggle" onchange="toggleManualHistoryInputs()">
+                                    <span><i class="ph ph-sliders"></i> Manual Override: 7-Day Lag &amp; Rolling Demand (Optional)</span>
+                                </label>
+                                <div id="demand-manual-history-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.65rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="demand-manual-lag" style="font-size: 0.78rem;">7-Day Lag Demand (portions)</label>
+                                        <input type="number" id="demand-manual-lag" class="form-control" placeholder="e.g. 380" min="0">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="demand-manual-rolling" style="font-size: 0.78rem;">7-Day Rolling Avg (portions)</label>
+                                        <input type="number" id="demand-manual-rolling" class="form-control" placeholder="e.g. 395" min="0">
+                                    </div>
                                 </div>
                             </div>
 
@@ -1145,12 +1229,13 @@
                                     <th>ORGANIZATION</th>
                                     <th>FOOD ITEM</th>
                                     <th>QUANTITY</th>
+                                    <th>SCHEDULED SLOT</th>
                                     <th>FINAL STATUS</th>
-                                    <th>AUDIT DETAILS</th>
+                                    <th>AUDIT & VERIFICATION</th>
                                 </tr>
                             </thead>
                             <tbody id="supplier-history-tbody">
-                                <tr><td colspan="6" class="text-center text-muted">Loading completed history...</td></tr>
+                                <tr><td colspan="7" class="text-center text-muted">Loading completed history...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1202,12 +1287,136 @@
                  CANTEEN WORKSPACE: 6. CANTEEN ANALYTICS
                  ======================================================= -->
             <section id="canteen-analytics" class="page-section hidden">
-                <div style="margin-bottom: 1.5rem;">
-                    <span class="badge badge-success"><i class="ph ph-chart-line-up"></i> Canteen Operational Analytics</span>
-                    <h2 style="font-size: 1.6rem; font-weight: 800; margin-top: 0.35rem;">Kitchen Production & Waste Avoidance Analytics</h2>
-                    <p class="text-secondary" style="font-size: 0.88rem;">
-                        Audited metrics calculated from demand forecast logs, kitchen stock, and completed food recovery records.
-                    </p>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <span class="badge badge-success"><i class="ph ph-currency-inr"></i> Canteen Financial & Operational Analytics</span>
+                        <h2 style="font-size: 1.6rem; font-weight: 800; margin-top: 0.35rem;">Kitchen Cash Flow, Waste Savings & Actuals</h2>
+                        <p class="text-secondary" style="font-size: 0.88rem;">
+                            Financial performance, labor overhead, procurement, and ground-truth demand validation. (Canteen Staff View Only).
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <!-- Timeframe Toggle -->
+                        <div style="background: var(--bg-surface-secondary, #f1f5f9); padding: 4px; border-radius: 8px; display: flex; border: 1px solid var(--border-color);">
+                            <button type="button" id="btn-finance-weekly" class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 6px;" onclick="setFinancialTimeframe('weekly')">
+                                Weekly View
+                            </button>
+                            <button type="button" id="btn-finance-monthly" class="btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 6px; border: none; background: transparent;" onclick="setFinancialTimeframe('monthly')">
+                                Monthly View
+                            </button>
+                        </div>
+                        <!-- Daily Closing Button -->
+                        <button type="button" class="btn-primary" onclick="openDailyClosingModal()" style="font-size: 0.85rem; padding: 0.45rem 0.95rem;">
+                            <i class="ph ph-calendar-check"></i> Record Daily Shift Closing
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Financial & Waste Savings KPI Grid -->
+                <div class="kpi-grid" style="margin-bottom: 1.5rem;">
+                    <div class="kpi-card" style="border-top: 3px solid var(--primary);">
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Sales Income</span>
+                            <span class="kpi-value" id="fin-kpi-revenue" style="color: var(--primary);">₹0</span>
+                            <span class="kpi-subtext" id="fin-kpi-servings-sub"><span class="badge badge-info">0 Meals Sold</span></span>
+                        </div>
+                        <div class="kpi-icon-box teal"><i class="ph ph-currency-inr"></i></div>
+                    </div>
+
+                    <div class="kpi-card" style="border-top: 3px solid var(--danger, #ef4444);">
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Kitchen Expenses</span>
+                            <span class="kpi-value" id="fin-kpi-expense" style="color: #ef4444;">₹0</span>
+                            <span class="kpi-subtext"><span class="badge badge-purple">Stock + Staff Wages</span></span>
+                        </div>
+                        <div class="kpi-icon-box purple"><i class="ph ph-receipt"></i></div>
+                    </div>
+
+                    <div class="kpi-card" style="border-top: 3px solid var(--success, #10b981);">
+                        <div class="kpi-content">
+                            <span class="kpi-label">Net Operating Profit</span>
+                            <span class="kpi-value" id="fin-kpi-profit" style="color: #10b981;">₹0</span>
+                            <span class="kpi-subtext"><span class="badge badge-success" id="fin-kpi-margin">+0% Margin</span></span>
+                        </div>
+                        <div class="kpi-icon-box emerald"><i class="ph ph-trend-up"></i></div>
+                    </div>
+
+                    <div class="kpi-card" style="border-top: 3px solid #8b5cf6;">
+                        <div class="kpi-content">
+                            <span class="kpi-label">AI Waste Cost Saved</span>
+                            <span class="kpi-value" id="fin-kpi-savings" style="color: #8b5cf6;">₹0</span>
+                            <span class="kpi-subtext"><span class="badge badge-info" id="fin-kpi-acc-badge">96% Forecast Accuracy</span></span>
+                        </div>
+                        <div class="kpi-icon-box blue"><i class="ph ph-shield-check"></i></div>
+                    </div>
+                </div>
+
+                <!-- Financial Charts Row -->
+                <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="card">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.05rem; font-weight: 700;">
+                                <i class="ph ph-chart-bar"></i> Cash Flow: Sales Revenue vs Expenses vs Profit
+                            </h3>
+                            <span class="badge badge-info" id="fin-chart-time-badge">Weekly Breakdown</span>
+                        </div>
+                        <div style="height: 270px; width: 100%;">
+                            <canvas id="canteenFinancialTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                            <h3 style="font-size: 1.05rem; font-weight: 700;">
+                                <i class="ph ph-chart-line-up"></i> AI Predicted Demand vs Actual Servings Sold
+                            </h3>
+                            <span class="badge badge-success">Ground Truth Validation</span>
+                        </div>
+                        <div style="height: 270px; width: 100%;">
+                            <canvas id="canteenActualVsPredictedChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kitchen Expense Composition Breakdown -->
+                <div class="card" style="margin-bottom: 1.5rem; background: var(--bg-surface);">
+                    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem;">
+                        <i class="ph ph-pie-chart"></i> Operational Cost Structure
+                    </h3>
+                    <div id="canteen-expense-breakdown-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px;">
+                                <span><i class="ph ph-basket"></i> Raw Food Ingredients &amp; Groceries</span>
+                                <span id="exp-bar-val-ingredients" style="color: var(--primary);">75.0%</span>
+                            </div>
+                            <div style="height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+                                <div id="exp-bar-fill-ingredients" style="width: 75%; height: 100%; background: var(--primary); transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px;">
+                                <span><i class="ph ph-users-three"></i> Kitchen Staff Labor &amp; Wages</span>
+                                <span id="exp-bar-val-wages" style="color: #8b5cf6;">18.0%</span>
+                            </div>
+                            <div style="height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+                                <div id="exp-bar-fill-wages" style="width: 18%; height: 100%; background: #8b5cf6; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 600; margin-bottom: 4px;">
+                                <span><i class="ph ph-fire"></i> Commercial Gas, Electricity &amp; Utilities</span>
+                                <span id="exp-bar-val-utilities" style="color: var(--warning, #f59e0b);">7.0%</span>
+                            </div>
+                            <div style="height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+                                <div id="exp-bar-fill-utilities" style="width: 7%; height: 100%; background: #f59e0b; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; margin-bottom: 1rem; border-top: 1px dashed var(--border-color); padding-top: 1.5rem;">
+                    <span class="badge badge-info"><i class="ph ph-gauge"></i> Kitchen Efficiency &amp; Environmental Impact</span>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-top: 0.35rem;">Food Spoilage &amp; Recovery Metrics</h3>
                 </div>
 
                 <div class="kpi-grid" style="margin-bottom: 1.5rem;">
@@ -2279,6 +2488,82 @@
                 <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
                     <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeEditProfileModal()">Cancel</button>
                     <button type="submit" id="edit-profile-save-btn" class="btn-primary" style="flex: 1;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. Kitchen Daily Shift Closing & Reconciliation Modal (Canteen Only) -->
+    <div id="daily-closing-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 540px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="badge badge-success"><i class="ph ph-calendar-check"></i> EOD Reconciliation</span>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Kitchen Daily Shift Closing</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeDailyClosingModal()">&times;</button>
+            </div>
+            <form id="daily-closing-form" onsubmit="submitDailyClosing(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem;">
+                    <div class="form-group">
+                        <label for="close-date">Closing Date</label>
+                        <input type="date" id="close-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="close-actual-servings">Actual Servings Consumed</label>
+                        <input type="number" id="close-actual-servings" class="form-control" placeholder="e.g. 395" min="0" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label for="close-staff-count">Staff on Duty Count</label>
+                        <input type="number" id="close-staff-count" class="form-control" placeholder="e.g. 5" min="0" value="5" oninput="calculateClosingTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="close-staff-wages">Total Staff Wages (₹)</label>
+                        <input type="number" id="close-staff-wages" class="form-control" placeholder="e.g. 2500" min="0" step="0.01" value="2500" oninput="calculateClosingTotals()">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label for="close-ingredient-expense">Grocery &amp; Stock Expense (₹)</label>
+                        <input type="number" id="close-ingredient-expense" class="form-control" placeholder="e.g. 11200" min="0" step="0.01" required oninput="calculateClosingTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="close-utility-expense">Gas &amp; Utilities (₹)</label>
+                        <input type="number" id="close-utility-expense" class="form-control" placeholder="e.g. 1000" min="0" step="0.01" value="1000" oninput="calculateClosingTotals()">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="close-total-revenue">Today's Sales Revenue (₹)</label>
+                    <input type="number" id="close-total-revenue" class="form-control" placeholder="e.g. 19750" min="0" step="0.01" required oninput="calculateClosingTotals()">
+                </div>
+
+                <!-- Live Auto-Calculation Preview -->
+                <div style="background: var(--bg-surface-secondary, #f8fafc); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                        <span class="text-secondary">Total Operating Expenses:</span>
+                        <strong id="close-preview-expense" style="color: #ef4444;">₹0.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700;">
+                        <span>Estimated Net Operating Profit:</span>
+                        <strong id="close-preview-profit" style="color: #10b981;">₹0.00</strong>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="close-notes">Operational Notes (Optional)</label>
+                    <input type="text" id="close-notes" class="form-control" placeholder="e.g. Higher footfall due to college cultural fest">
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+                    <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeDailyClosingModal()">Cancel</button>
+                    <button type="submit" id="close-submit-btn" class="btn-primary" style="flex: 1.3;">
+                        <i class="ph ph-check-circle"></i> Save Daily Closing
+                    </button>
                 </div>
             </form>
         </div>
