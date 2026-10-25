@@ -1,7 +1,7 @@
 """
 Serviqo AI — Complete End-to-End Verification Test Script
-Tests the exact 11-step Supplier <-> Partner Organization Food Redistribution Workflow
-as specified in Prompt Section 21.
+Verifies the complete 11-step Supplier <-> Partner Organization Food Redistribution Workflow
+as specified in the Engineering Architecture & API Specification.
 """
 import sys
 import json

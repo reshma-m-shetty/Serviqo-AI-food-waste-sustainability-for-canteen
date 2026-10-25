@@ -43,7 +43,7 @@ Serviqo AI is an intelligent sustainability and food supply ecosystem engineered
 ## 📁 Repository Structure
 
 ```
-c:\Serviqo Ai\
+serviqo-ai/
 ├── main.py                  # FastAPI REST API endpoints, routing & middleware
 ├── database.py              # Pure MySQL 8.0 connection pool, relational schemas & CRUD
 ├── ml_engine.py             # Dual LightGBM inference engine & automated lag extractor
@@ -57,6 +57,7 @@ c:\Serviqo Ai\
 │   ├── test_phase1_pipeline.py       # ML architecture, lag features & health tests
 │   ├── test_phase2_verification.py   # Reservation engine, state machine & transaction tests
 │   ├── test_ngo_data_isolation.py    # Multi-tenant NGO isolation tests
+│   ├── test_lifecycle_and_cloud.py   # Full 15-scenario lifecycle & Cloud DB tests
 │   └── test_e2e_verification.py      # End-to-end full lifecycle tests
 └── README.md                # Project documentation
 ```
@@ -120,11 +121,20 @@ Interactive API documentation is accessible at **`http://localhost:8000/docs`**.
 
 Run the test suite to verify ML inference, database integrity, and tenant isolation:
 ```bash
-# Run core pipeline & ML model verification
+# Run core ML pipeline & model architecture verification
 python tests/test_phase1_pipeline.py
 
 # Run food redistribution & reservation engine verification
 python tests/test_phase2_verification.py
+
+# Run multi-tenant NGO isolation verification
+python tests/test_ngo_data_isolation.py
+
+# Run full 15-scenario lifecycle & Cloud MySQL verification
+python tests/test_lifecycle_and_cloud.py
+
+# Or execute with pytest
+pytest -s tests/
 ```
 
 ---
@@ -133,7 +143,3 @@ python tests/test_phase2_verification.py
 * **Zero-Leakage Tenancy:** Scoped queries ensure NGOs can never view or modify another organization's donation dispatches.
 * **Parametrized SQL Queries:** 100% protection against SQL injection vulnerabilities across all database operations.
 * **Strict Transport Security:** Native SSL/TLS support for secure connections to cloud-hosted databases.
-=======
-# Serviqo-AI
-A food demand prediction model and connects the surplus food to the NGO and needed people without wasting of food
-

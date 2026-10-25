@@ -1,8 +1,8 @@
 // =========================================================================
-// SERVIQO AI — FRONTEND APPLICATION CONTROLLER
-// Intelligent Canteen Management, Demand Forecasting & Food Recovery Platform
-// Primary Organization: Srinivas Institute Canteen / Kitchen
-// Secondary Actor: Registered NGO / Relief Partner
+// SERVIQO AI — FRONTEND APPLICATION CONTROLLER (v3.0)
+// Intelligent Canteen Management, LightGBM Demand Forecasting & Surplus Food Recovery
+// Primary Actor: Institutional Canteen / Kitchen Admin
+// Secondary Actor: Registered NGO / Relief Partner Organization
 // =========================================================================
 
 // Dynamic API Base URL supporting cloud deployment, same-origin hosting, and local development
@@ -1246,6 +1246,8 @@ function initAttendanceAutoTally() {
     });
 }
 
+// Fetches real-time hyper-local meteorological data (temperature, rainfall, relative humidity)
+// with high-precision decimal representation via Open-Meteo API for Srinivas Campus
 async function syncCampusLiveWeather() {
     const btn = document.getElementById('btn-sync-weather');
     const statusEl = document.getElementById('weather-sync-status');
@@ -2121,7 +2123,7 @@ async function handleSupplierMarkCompleted(requestId) {
     return handleSupplierVerifyHandover(requestId);
 }
 
-// Backward Compatibility Aliases for Legacy Modals
+// Compatibility Aliases for Surplus Redistribution Modals
 function openSurplusDonationModal() {
     openPublishSurplusModal();
 }

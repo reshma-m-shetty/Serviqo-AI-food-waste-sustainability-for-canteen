@@ -3,7 +3,7 @@ Serviqo AI - Phase 1 Core Prediction Pipeline Verification Tests
 Tests all approved Phase 1 corrections:
 1. Strict authoritative loading of 'canteen_model.joblib'
 2. Clean failure (RuntimeError / HTTP 503) when artifact is missing or corrupted (no fallback heuristics)
-3. Exclusion of legacy .pkl, XGBoost, and synthetic formulas
+3. Authoritative LightGBM dual-model validation (excluding legacy pkl / heuristics)
 4. Correct automated derivation of 7-day lag and 7-day rolling mean
 5. Robust handling of missing or insufficient historical observations (<7 days)
 6. Correct 19 feature names, types, and sequence fed to LightGBM

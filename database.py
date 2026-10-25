@@ -1,7 +1,7 @@
 """
-Serviqo AI - Pure MySQL Database Layer
-All SQLite dependencies have been completely replaced with MySQL 8.0.
-Thread-safe connection pool, secure password hashing (bcrypt), and relational schema.
+Serviqo AI — Enterprise MySQL 8.0 Database Engine
+Thread-safe connection pooling (MySQLPool), ACID transactions with row-level locks,
+cryptographic password security (bcrypt), and multi-tenant data isolation.
 """
 
 import os
@@ -1443,7 +1443,7 @@ def create_donation_request(data: Dict[str, Any]) -> Dict[str, Any]:
         """, (post_id, inventory_id, organization_id, organization_name, post["food_item"], requested_qty, post["unit"], message, preferred_pickup_time, post["pickup_location"]))
         request_id = cursor.lastrowid
 
-        # 5. Mirror to legacy donations table linked by request_id
+        # 5. Synchronize with donations audit log table linked by request_id
         cursor.execute("""
             INSERT INTO donations (request_id, post_id, inventory_id, food_item, quantity, unit, ngo_id, ngo_name, supplier_name, pickup_address, pickup_deadline, message, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'PENDING')
@@ -1619,7 +1619,7 @@ def update_donation_request_status(
             WHERE id = %s
         """, (clean_status, pickup_date, pickup_time, pickup_location, accepted_at, completed_at, actual_fulfilled, request_id))
 
-        # Update legacy donations table mirror by request_id (or fallback match)
+        # Update donations audit log table by request_id (or fallback match)
         cursor.execute("""
             UPDATE donations
             SET status = %s, completed_at = %s
@@ -1690,7 +1690,7 @@ def get_organization_requests(organization_id: Optional[int] = None, organizatio
                 r["completed_at"] = r["completed_at"].strftime("%Y-%m-%d %H:%M:%S")
             r["requested_quantity"] = float(r["requested_quantity"])
 
-        # Fallback check on donations table if no donation_requests exist yet for this legacy NGO
+        # Fallback check on donations table if no donation_requests exist yet for historical records
         if not rows and (organization_id or organization_name):
             don_query = """
                 SELECT 
@@ -2147,7 +2147,7 @@ def get_ngo_kpis(ngo_id: int) -> Dict[str, Any]:
         food_received_kg = round(float(req_row["food_received_kg"] or 0.0), 1)
         accepted_kg = round(float(req_row["accepted_kg"] or 0.0), 1)
 
-        # Fallback check on donations table if no donation_requests exist yet for this legacy NGO
+        # Fallback check on donations table for historical NGO metrics
         if total_requests == 0:
             cursor.execute("""
                 SELECT 

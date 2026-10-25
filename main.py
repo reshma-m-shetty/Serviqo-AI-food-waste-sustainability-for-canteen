@@ -1,7 +1,8 @@
 """
-Serviqo AI - Pure MySQL FastAPI Backend
-Connected end-to-end to MySQL 8.0 (serviqo_ai) and canteen_model.joblib.
-Zero SQLite dependencies.
+Serviqo AI — Production FastAPI Backend Service (v3.0)
+Powers dual-target LightGBM kitchen demand forecasting, atomic surplus food redistribution,
+smart inventory monitoring, and multi-tenant NGO relief dispatch.
+Directly connected to MySQL 8.0 connection pool and authoritative canteen_model.joblib.
 """
 
 import os

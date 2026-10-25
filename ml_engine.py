@@ -1,7 +1,7 @@
 """
-Serviqo AI - ML Demand Forecasting Engine
-Directly integrates canteen_model.joblib (LightGBM dual-model: expected demand + 85th-percentile quantile safe preparation).
-Provides item-level portion forecasting and overall kitchen demand requirements.
+Serviqo AI — Production ML Demand Forecasting Engine
+Integrates canteen_model.joblib (dual-target LightGBM: baseline portion demand + 85th-percentile safe prep buffer).
+Supports 19 meteorological and operational features with automated historical 7-day lag analytics.
 """
 
 import os
